@@ -55,7 +55,9 @@ from osdagbridge.core.utils.common import (
 
 from osdagbridge.core.reports.report_utils import _tex, _render_value
 
-def ch3_loads(input_dict):
+def ch3_loads(input_dict, output_dict=None):
+    if output_dict is None:
+        output_dict = {}
     # Live load vehicle names mapping
     vehicles = []
     if input_dict.get(KEY_LL_IRC_CLASS_A):
@@ -200,6 +202,44 @@ def ch3_loads(input_dict):
     def _sl(v, unit=""):
         return f"{float(v):.4f}{unit}" if v not in (None, "") else "N/A"
 
+    # Seismic forces (longitudinal and transverse)
+    # Check output_dict and input_dict first; if missing, derive via IRC6 if inputs exist
+    seismic_fx = output_dict.get("seismic_force_longitudinal") or output_dict.get("seismic_fx") or input_dict.get("seismic_force_longitudinal")
+    seismic_fz = output_dict.get("seismic_force_transverse") or output_dict.get("seismic_fz") or input_dict.get("seismic_force_transverse")
+    
+    if seismic_fx is None or seismic_fz is None:
+        try:
+            _zone = input_dict.get(KEY_SL_SEISMIC_ZONE) or input_dict.get('seismic_zone')
+            _zmap = {"1": "I", "2": "II", "3": "III", "4": "IV", "5": "V"}
+            _z = str(_zone).strip().upper()
+            if _z.isdigit():
+                _z = _zmap.get(_z)
+            _smap = {"Type I – Rocky or Hard": 1, "Type II – Medium Soil": 2, "Type III – Soft Soil": 3}
+            _st = _smap.get(str(input_dict.get(KEY_SL_SOIL_TYPE, "")), 1)
+            _tp = input_dict.get(KEY_SL_TIME_PERIOD)
+            _damp = input_dict.get(KEY_SL_DAMPING) or "5"
+            _dl_v = input_dict.get(KEY_SL_DEAD_LOAD_VALUE)
+            _ll_v = input_dict.get(KEY_SL_LIVE_LOAD_VALUE)
+            _dead = float(_dl_v) if str(input_dict.get(KEY_SL_DEAD_LOAD_MODE, "")) == "Custom" and _dl_v else 0.0
+            _live = float(_ll_v) if str(input_dict.get(KEY_SL_LIVE_LOAD_MODE, "")) == "Custom" and _ll_v else 0.0
+            
+            if _zone and (_dead > 0 or _live > 0):
+                if seismic_fx is None:
+                    _res_long = IRC6_2017.cl_218_5_1(zone=f"Zone {_z}", soil_type=_st, dead_load_kN=_dead,
+                                                     live_load_kN=_live, period_T=float(_tp) if _tp else None,
+                                                     damping_percent=float(_damp), direction='parallel')
+                    seismic_fx = _res_long.get("Feq_design") or _res_long.get("Feq")
+                if seismic_fz is None:
+                    _res_trans = IRC6_2017.cl_218_5_1(zone=f"Zone {_z}", soil_type=_st, dead_load_kN=_dead,
+                                                      live_load_kN=_live, period_T=float(_tp) if _tp else None,
+                                                      damping_percent=float(_damp), direction='perpendicular')
+                    seismic_fz = _res_trans.get("Feq_design") or _res_trans.get("Feq")
+        except Exception:
+            pass
+
+    seismic_fx_str = f"{float(seismic_fx):.2f}" if seismic_fx not in (None, "") else ""
+    seismic_fz_str = f"{float(seismic_fz):.2f}" if seismic_fz not in (None, "") else ""
+
     # Table 3.6 — Temperature: compute effective bridge temp range from shade temps
     tl_temp_min = tl_temp_max = tl_rise = tl_fall = "N/A"
     try:
@@ -311,7 +351,7 @@ This section summarizes all loads applied to the bridge and the load combination
 \hline
 \textnormal{Braking Load (IRC 6)} & """ + _tex(braking_force_str) + r""" \\[6pt]
 \hline
-\textnormal{Footpath Live Load (if applicable)} & """ + (_render_value(input_dict, KEY_LL_FOOTPATH_PRESSURE_VALUE, ' kN/m\\textsuperscript{2}')) + r""" \\[6pt]
+\textnormal{Footpath Live Load (if applicable)} & """ + _tex(fp_str) + r""" \\[6pt]
 \hline
 \end{longtable}
 
@@ -359,9 +399,9 @@ This section summarizes all loads applied to the bridge and the load combination
 \hline
 \textnormal{Vertical Seismic Coefficient, Av} & """ + (_render_value(input_dict, KEY_SL_VERTICAL_COEFF)) + r""" \\[6pt]
 \hline
-\textnormal{Horizontal Seismic Force (longitudinal)} & """ + '' + r""" kN \\[6pt]
+\textnormal{Horizontal Seismic Force (longitudinal)} & """ + (_tex(seismic_fx_str) + ' kN' if seismic_fx_str else '') + r""" \\[6pt]
 \hline
-\textnormal{Horizontal Seismic Force (transverse)} & """ + '' + r""" kN \\[6pt]
+\textnormal{Horizontal Seismic Force (transverse)} & """ + (_tex(seismic_fz_str) + ' kN' if seismic_fz_str else '') + r""" \\[6pt]
 \hline
 \end{longtable}
 

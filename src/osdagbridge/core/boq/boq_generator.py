@@ -36,55 +36,55 @@ def calculate_material_quantities(inputs: dict, outputs: dict) -> dict:
     needed for the material take-off summary (Chapter 7).
     """
     quantities = {
-        "steel_girders_vol_formula": r"\placeholder{Area $\times$ Length}",
+        "steel_girders_vol_formula": r"\placeholder{Area \(\times\) Length}",
         "steel_girders_qty": "N.A.",
         "steel_girders_vol_total": "N.A.",
         "steel_girders_wt_single": "N.A.",
         "steel_girders_wt_total": "N.A.",
         
-        "steel_bracing_vol_formula": r"\placeholder{Area $\times$ Length}",
+        "steel_bracing_vol_formula": r"\placeholder{Area \(\times\) Length}",
         "steel_bracing_qty": "N.A.",
         "steel_bracing_vol_total": "N.A.",
         "steel_bracing_wt_single": "N.A.",
         "steel_bracing_wt_total": "N.A.",
 
-        "bracing_top_vol_formula": r"\placeholder{Area $\times$ Length}",
+        "bracing_top_vol_formula": r"\placeholder{Area \(\times\) Length}",
         "bracing_top_qty": "N.A.",
         "bracing_top_vol_total": "N.A.",
         "bracing_top_wt_single": "N.A.",
         "bracing_top_wt_total": "N.A.",
 
-        "bracing_bot_vol_formula": r"\placeholder{Area $\times$ Length}",
+        "bracing_bot_vol_formula": r"\placeholder{Area \(\times\) Length}",
         "bracing_bot_qty": "N.A.",
         "bracing_bot_vol_total": "N.A.",
         "bracing_bot_wt_single": "N.A.",
         "bracing_bot_wt_total": "N.A.",
 
-        "bracing_diag_vol_formula": r"\placeholder{Area $\times$ Length}",
+        "bracing_diag_vol_formula": r"\placeholder{Area \(\times\) Length}",
         "bracing_diag_qty": "N.A.",
         "bracing_diag_vol_total": "N.A.",
         "bracing_diag_wt_single": "N.A.",
         "bracing_diag_wt_total": "N.A.",
         
-        "concrete_deck_vol_formula": r"\placeholder{Width $\times$ Thickness $\times$ Length}",
+        "concrete_deck_vol_formula": r"\placeholder{Width \(\times\) Thickness \(\times\) Length}",
         "concrete_deck_qty": "N.A.",
         "concrete_deck_vol_total": "N.A.",
         "concrete_deck_wt_single": "N.A.",
         "concrete_deck_wt_total": "N.A.",
         
-        "rebar_deck_vol_formula": r"\placeholder{Area $\times$ Length}",
+        "rebar_deck_vol_formula": r"\placeholder{Area \(\times\) Length}",
         "rebar_deck_qty": "N.A.",
         "rebar_deck_vol_total": "N.A.",
         "rebar_deck_wt_single": "N.A.",
         "rebar_deck_wt_total": "N.A.",
         
-        "shear_studs_vol_formula": r"\placeholder{Area $\times$ Height}",
+        "shear_studs_vol_formula": r"\placeholder{Area \(\times\) Height}",
         "shear_studs_qty": "N.A.",
         "shear_studs_vol_total": "N.A.",
         "shear_studs_wt_single": "N.A.",
         "shear_studs_wt_total": "N.A.",
 
-        "crash_barrier_vol_formula": r"\placeholder{Area $\times$ Length}",
+        "crash_barrier_vol_formula": r"\placeholder{Area \(\times\) Length}",
         "crash_barrier_qty": "N.A.",
         "crash_barrier_vol_total": "N.A.",
         "crash_barrier_wt_single": "N.A.",
@@ -115,7 +115,7 @@ def calculate_material_quantities(inputs: dict, outputs: dict) -> dict:
                 deck_thickness = float(deck_thickness_val) / 1000.0  # mm to m
                 if overall_width > 0 and deck_thickness > 0:
                     concrete_vol = span * overall_width * deck_thickness
-                    quantities["concrete_deck_vol_formula"] = f"${overall_width:.2f}\\text{{ m}} \\times {deck_thickness:.2f}\\text{{ m}} \\times {span:.2f}\\text{{ m}} = {concrete_vol:.2f}\\text{{ m}}^3$"
+                    quantities["concrete_deck_vol_formula"] = f"\\({overall_width:.2f}\\text{{ m}} \\times {deck_thickness:.2f}\\text{{ m}} \\times {span:.2f}\\text{{ m}} = {concrete_vol:.2f}\\text{{ m}}^3\\)"
                     quantities["concrete_deck_qty"] = "1"
                     quantities["concrete_deck_vol_total"] = f"{concrete_vol:.2f}"
                     quantities["concrete_deck_wt_single"] = f"{(concrete_vol * 2.5):.2f}"
@@ -125,7 +125,7 @@ def calculate_material_quantities(inputs: dict, outputs: dict) -> dict:
                     rebar_wt_kg = concrete_vol * 120.0
                     rebar_vol = rebar_wt_kg / 7850.0
                     rebar_area = rebar_vol / span if span > 0 else 0.0
-                    quantities["rebar_deck_vol_formula"] = f"${rebar_area:.6f}\\text{{ m}}^2 \\times {span:.2f}\\text{{ m}} = {rebar_vol:.5f}\\text{{ m}}^3$"
+                    quantities["rebar_deck_vol_formula"] = f"\\({rebar_area:.6f}\\text{{ m}}^2 \\times {span:.2f}\\text{{ m}} = {rebar_vol:.5f}\\text{{ m}}^3\\)"
                     quantities["rebar_deck_qty"] = "1"
                     quantities["rebar_deck_vol_total"] = f"{rebar_vol:.2f}"
                     
@@ -172,7 +172,7 @@ def calculate_material_quantities(inputs: dict, outputs: dict) -> dict:
         total_girder_mass = 0.0
         if girder_area > 0:
             girder_vol = girder_area * span
-            quantities["steel_girders_vol_formula"] = f"${girder_area:.5f}\\text{{ m}}^2 \\times {span:.2f}\\text{{ m}} = {girder_vol:.5f}\\text{{ m}}^3$"
+            quantities["steel_girders_vol_formula"] = f"\\({girder_area:.5f}\\text{{ m}}^2 \\times {span:.2f}\\text{{ m}} = {girder_vol:.5f}\\text{{ m}}^3\\)"
             quantities["steel_girders_qty"] = str(n_girders)
             
             # calculate tonnage / volume
@@ -218,7 +218,7 @@ def calculate_material_quantities(inputs: dict, outputs: dict) -> dict:
             
             stud_area = (3.14159 * (stud_d / 1000.0) ** 2) / 4.0
             stud_vol = stud_area * stud_h
-            quantities["shear_studs_vol_formula"] = f"${stud_area:.6f}\\text{{ m}}^2 \\times {stud_h:.3f}\\text{{ m}} = {stud_vol:.6f}\\text{{ m}}^3$"
+            quantities["shear_studs_vol_formula"] = f"\\({stud_area:.6f}\\text{{ m}}^2 \\times {stud_h:.3f}\\text{{ m}} = {stud_vol:.6f}\\text{{ m}}^3\\)"
             quantities["shear_studs_qty"] = str(total_studs)
             
             studs_total_vol = total_studs * stud_vol
@@ -290,7 +290,7 @@ def calculate_material_quantities(inputs: dict, outputs: dict) -> dict:
             top_chord_wt_single = top_chord_vol_single * 7.85
             top_chord_wt_total = top_chord_vol_total * 7.85
             
-            quantities["bracing_top_vol_formula"] = f"${bracing_area:.5f}\\text{{ m}}^2 \\times {spacing:.2f}\\text{{ m}} = {top_chord_vol_single:.5f}\\text{{ m}}^3$"
+            quantities["bracing_top_vol_formula"] = f"\\({bracing_area:.5f}\\text{{ m}}^2 \\times {spacing:.2f}\\text{{ m}} = {top_chord_vol_single:.5f}\\text{{ m}}^3\\)"
             quantities["bracing_top_qty"] = str(top_chord_qty)
             quantities["bracing_top_vol_total"] = f"{top_chord_vol_total:.2f}" if top_chord_enabled else "0.00"
             quantities["bracing_top_wt_single"] = f"{top_chord_wt_single:.4f}"
@@ -303,7 +303,7 @@ def calculate_material_quantities(inputs: dict, outputs: dict) -> dict:
             bot_chord_wt_single = bot_chord_vol_single * 7.85
             bot_chord_wt_total = bot_chord_vol_total * 7.85
             
-            quantities["bracing_bot_vol_formula"] = f"${bracing_area:.5f}\\text{{ m}}^2 \\times {spacing:.2f}\\text{{ m}} = {bot_chord_vol_single:.5f}\\text{{ m}}^3$"
+            quantities["bracing_bot_vol_formula"] = f"\\({bracing_area:.5f}\\text{{ m}}^2 \\times {spacing:.2f}\\text{{ m}} = {bot_chord_vol_single:.5f}\\text{{ m}}^3\\)"
             quantities["bracing_bot_qty"] = str(bot_chord_qty)
             quantities["bracing_bot_vol_total"] = f"{bot_chord_vol_total:.2f}" if bot_chord_enabled else "0.00"
             quantities["bracing_bot_wt_single"] = f"{bot_chord_wt_single:.4f}"
@@ -316,7 +316,7 @@ def calculate_material_quantities(inputs: dict, outputs: dict) -> dict:
             diag_wt_single = diag_vol_single * 7.85
             diag_wt_total = diag_vol_total * 7.85
             
-            quantities["bracing_diag_vol_formula"] = f"${bracing_area:.5f}\\text{{ m}}^2 \\times {bracing_len:.2f}\\text{{ m}} = {diag_vol_single:.5f}\\text{{ m}}^3$"
+            quantities["bracing_diag_vol_formula"] = f"\\({bracing_area:.5f}\\text{{ m}}^2 \\times {bracing_len:.2f}\\text{{ m}} = {diag_vol_single:.5f}\\text{{ m}}^3\\)"
             quantities["bracing_diag_qty"] = str(diags_qty)
             quantities["bracing_diag_vol_total"] = f"{diag_vol_total:.2f}"
             quantities["bracing_diag_wt_single"] = f"{diag_wt_single:.4f}"
@@ -343,7 +343,7 @@ def calculate_material_quantities(inputs: dict, outputs: dict) -> dict:
         
         if cb_area > 0.0:
             cb_vol = cb_area * span
-            quantities["crash_barrier_vol_formula"] = f"${cb_area:.5f}\\text{{ m}}^2 \\times {span:.2f}\\text{{ m}} = {cb_vol:.5f}\\text{{ m}}^3$"
+            quantities["crash_barrier_vol_formula"] = f"\\({cb_area:.5f}\\text{{ m}}^2 \\times {span:.2f}\\text{{ m}} = {cb_vol:.5f}\\text{{ m}}^3\\)"
             quantities["crash_barrier_qty"] = "2"
             
             cb_total_vol = 2 * cb_vol
