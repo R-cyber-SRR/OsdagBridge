@@ -129,6 +129,13 @@ from .chap6 import ch6_drawings
 from .chap7 import ch7_quantities
 from .chap8 import ch8_design_log
 from .chap9 import references
+from .styles import (
+    GEOMETRY_OPTIONS,
+    OSDAG_GREEN_LATEX,
+    TABLE_STYLE,
+    COLORS,
+)
+from .visualizations import generate_all_report_visualizations
 
 logger = logging.getLogger(__name__)
 
@@ -901,6 +908,15 @@ def generate_report(payload, request):
             quantities = calculate_material_quantities(payload.inputs, payload.output_dict)
             payload.inputs.update(quantities)
 
+            # Generate dynamic engineering visualizations (Phase 3)
+            chart_paths = generate_all_report_visualizations(
+                output_dict=payload.output_dict,
+                input_dict=payload.inputs,
+                boq_quantities=quantities,
+                output_dir=tmp_images,
+            )
+            fig_paths.update(chart_paths)
+
             # ── Assemble LaTeX document (fig_paths now has tmp_dir paths) ──
             bridge = ReportDataBridge(payload.output_dict, payload.inputs, payload)
             span_m = float(payload.inputs.get(KEY_SPAN, 0) or 0)
@@ -926,11 +942,11 @@ def generate_report(payload, request):
             if 'analysis' in secs:
                 doc_parts.append(ch4_analysis(payload.analysis_summary, fig_paths, bridge, span_m))
             if 'design_checks' in secs:
-                doc_parts.append(ch5_design_checks(payload.design_checks, bridge))
+                doc_parts.append(ch5_design_checks(payload.design_checks, bridge, fig_paths))
             if 'drawings' in secs and payload.options.include_figures:
                 doc_parts.append(ch6_drawings(fig_paths))
 
-            doc_parts.append(ch7_quantities(payload.inputs))
+            doc_parts.append(ch7_quantities(payload.inputs, fig_paths))
 
             mode = str(payload.inputs.get(KEY_DESIGN_MODE, "Optimized")).strip().lower()
             is_custom = mode in {"custom", "customized"}

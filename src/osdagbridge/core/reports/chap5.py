@@ -145,7 +145,7 @@ from osdagbridge.core.reports.report_utils import _tex, _render_value, get_girde
 
 if TYPE_CHECKING:
     pass
-def ch5_design_checks(checks_data, bridge) -> str:
+def ch5_design_checks(checks_data, bridge, fig_paths=None) -> str:
     """Chapter 5 — Design Checks.
 
     Parameters
@@ -154,7 +154,11 @@ def ch5_design_checks(checks_data, bridge) -> str:
         Raw checks payload (currently unused; data is sourced from bridge).
     bridge : ReportDataBridge
         Provides input_dict, output_dict, and helper methods.
+    fig_paths : dict, optional
+        Paths to generated figure images.
     """
+    if fig_paths is None:
+        fig_paths = {}
     girder_entries = get_girder_entries(bridge.input_dict)
     if not girder_entries:
         n = int(bridge.input_dict.get(KEY_TS_NO_OF_GIRDERS, 1))
@@ -1071,6 +1075,39 @@ Fatigue Shear Resistance, $Q_r$ & IRC 22 Table 8 ($\phi d$, $N_{sc}$) & """
     ]
     t522_content = "\n".join(_t522)
 
+    def _ur_fig(key: str, title: str, label: str) -> str:
+        p = fig_paths.get(key)
+        if not p:
+            return ""
+        p_clean = str(p).replace("\\", "/")
+        return (
+            r"\begin{figure}[H]" + "\n"
+            r"\centering" + "\n"
+            r"\vspace{4pt}" + "\n"
+            r"\includegraphics[width=0.88\textwidth]{" + p_clean + r"}" + "\n"
+            r"\caption{" + title + r"}" + "\n"
+            r"\label{" + label + r"}" + "\n"
+            r"\end{figure}" + "\n"
+        )
+
+    ur_figs = []
+    for k, title, lbl in (
+        ("chart_ur_girders", "Steel Plate Girders --- Utilization Ratios", "fig:ur-girders"),
+        ("chart_ur_deck", "Concrete Deck Slab --- Utilization Ratios", "fig:ur-deck"),
+        ("chart_ur_cross_bracing", "Cross Bracing --- Member Utilization Ratios", "fig:ur-cross-bracing"),
+        ("chart_ur_end_diaphragm", "End Diaphragms --- Utilization Ratios", "fig:ur-end-diaphragm"),
+    ):
+        f = _ur_fig(k, title, lbl)
+        if f:
+            ur_figs.append(f)
+
+    ur_figs_block = ""
+    if ur_figs:
+        ur_figs_block = (
+            "\n" + r"\subsection{Component Utilization Ratio Visualizations}" + "\n\n"
+            + "\n".join(ur_figs)
+        )
+
     return r"""
 \chapter{Design Checks}
 
@@ -1684,6 +1721,6 @@ End diaphragms at the supports transfer transverse loads to the bearings, restra
 """ + t522_content + r"""
 \end{longtable}
 \noindent\textit{Note: UR = Demand / Capacity. All values $\leq 1.0$ indicate passing checks. The governing check for each component is highlighted in the individual design check sections above.}
-
+""" + ur_figs_block + r"""
 """
 

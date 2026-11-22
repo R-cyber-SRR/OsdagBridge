@@ -1,4 +1,37 @@
-def ch7_quantities(input_dict):
+def ch7_quantities(input_dict, fig_paths=None):
+    if fig_paths is None:
+        fig_paths = {}
+
+    def _mat_fig(key: str, title: str, label: str) -> str:
+        p = fig_paths.get(key)
+        if not p:
+            return ""
+        p_clean = str(p).replace("\\", "/")
+        return (
+            r"\begin{figure}[H]" + "\n"
+            r"\centering" + "\n"
+            r"\vspace{4pt}" + "\n"
+            r"\includegraphics[width=0.88\textwidth]{" + p_clean + r"}" + "\n"
+            r"\caption{" + title + r"}" + "\n"
+            r"\label{" + label + r"}" + "\n"
+            r"\end{figure}" + "\n"
+        )
+
+    mat_figs = []
+    f_steel = _mat_fig("chart_boq_steel_tonnage", "Structural Steel Tonnage Breakdown by Component", "fig:boq-steel")
+    if f_steel:
+        mat_figs.append(f_steel)
+    f_mat = _mat_fig("chart_boq_materials", "Material Quantities Summary (Concrete Volume and Rebar Tonnage)", "fig:boq-materials")
+    if f_mat:
+        mat_figs.append(f_mat)
+
+    mat_figs_block = ""
+    if mat_figs:
+        mat_figs_block = (
+            "\n" + r"\section{Material Quantity Visualizations}" + "\n\n"
+            + "\n".join(mat_figs)
+        )
+
     return r"""
 \chapter{Material Take-off \& Quantity Summary}
 \label{ch:material-takeoff}
@@ -35,6 +68,7 @@ def ch7_quantities(input_dict):
 \hline
 \end{longtable}
 \endgroup
+""" + mat_figs_block + r"""
 """
 
 
