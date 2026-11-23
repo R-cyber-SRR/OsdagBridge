@@ -61,6 +61,33 @@ def _safe_float(val: Any) -> Optional[float]:
         return None
 
 
+def _extract_osdag_efficiency(raw: Any) -> Optional[float]:
+    """Return a member UR only when it is present in a result payload.
+
+    Production transverse-member results retain the keys emitted by the Osdag
+    design engine (``Member.efficiency`` or legacy ``Optimum.UR``).  The
+    report's existing ``_extract_osdag_summary`` helper owns that key mapping.
+    ``efficiency`` is retained solely for already-normalized/legacy report
+    payloads.  No demand/capacity calculation or substitute value is made here.
+    """
+    if not isinstance(raw, dict):
+        return None
+
+    # Some callers already provide the normalized summary payload.
+    efficiency = _safe_float(raw.get("efficiency"))
+    if efficiency is not None:
+        return efficiency
+
+    # Match _extract_osdag_summary()'s production-key mapping directly.  This
+    # keeps report generation independent of the optional analysis module's
+    # import graph while accepting no keys beyond that established schema.
+    for key in ("Member.efficiency", "Optimum.UR"):
+        efficiency = _safe_float(raw.get(key))
+        if efficiency is not None:
+            return efficiency
+    return None
+
+
 def _fig_to_bytes(fig: Any) -> bytes:
     """Save matplotlib Figure to PNG bytes and close figure to free memory."""
     buf = io.BytesIO()
@@ -251,7 +278,7 @@ def extract_cross_bracing_utilization_ratios(output_dict: dict, input_dict: Opti
                 for ft, raw in force_types.items():
                     if not isinstance(raw, dict):
                         continue
-                    eff = _safe_float(raw.get("efficiency"))
+                    eff = _extract_osdag_efficiency(raw)
                     if eff is not None:
                         label = f"{pair_name} {mem_name[:4]} ({ft[:4]})"
                         items.append({
@@ -300,7 +327,7 @@ def extract_end_diaphragm_utilization_ratios(output_dict: dict, input_dict: Opti
                 for ft, raw in force_types.items():
                     if not isinstance(raw, dict):
                         continue
-                    eff = _safe_float(raw.get("efficiency"))
+                    eff = _extract_osdag_efficiency(raw)
                     if eff is not None:
                         label = f"ED {pair_name} ({ft[:4]})"
                         items.append({
@@ -626,14 +653,18 @@ def generate_all_report_visualizations(
     def _path(fname: str) -> Optional[str]:
         return os.path.join(output_dir, fname) if output_dir else None
 
-    try:
-        charts["chart_ur_girders"] = create_girder_ur_chart(output_dict, input_dict, _path("chart_ur_girders.png"))
-        charts["chart_ur_deck"] = create_deck_ur_chart(output_dict, input_dict, _path("chart_ur_deck.png"))
-        charts["chart_ur_cross_bracing"] = create_cross_bracing_ur_chart(output_dict, input_dict, _path("chart_ur_cross_bracing.png"))
-        charts["chart_ur_end_diaphragm"] = create_end_diaphragm_ur_chart(output_dict, input_dict, _path("chart_ur_end_diaphragm.png"))
-        charts["chart_boq_steel_tonnage"] = create_boq_steel_tonnage_chart(boq_quantities, _path("chart_boq_steel_tonnage.png"))
-        charts["chart_boq_materials"] = create_boq_materials_chart(boq_quantities, _path("chart_boq_materials.png"))
-    except Exception as exc:
-        logger.error(f"Error generating dynamic report visualizations: {exc}", exc_info=True)
+    chart_specs = (
+        ("chart_ur_girders", "chart_ur_girders.png", create_girder_ur_chart, (output_dict, input_dict)),
+        ("chart_ur_deck", "chart_ur_deck.png", create_deck_ur_chart, (output_dict, input_dict)),
+        ("chart_ur_cross_bracing", "chart_ur_cross_bracing.png", create_cross_bracing_ur_chart, (output_dict, input_dict)),
+        ("chart_ur_end_diaphragm", "chart_ur_end_diaphragm.png", create_end_diaphragm_ur_chart, (output_dict, input_dict)),
+        ("chart_boq_steel_tonnage", "chart_boq_steel_tonnage.png", create_boq_steel_tonnage_chart, (boq_quantities,)),
+        ("chart_boq_materials", "chart_boq_materials.png", create_boq_materials_chart, (boq_quantities,)),
+    )
+    for chart_key, filename, chart_generator, args in chart_specs:
+        try:
+            charts[chart_key] = chart_generator(*args, output_path=_path(filename))
+        except Exception:
+            logger.error("Error generating report visualization %s", chart_key, exc_info=True)
 
     return charts

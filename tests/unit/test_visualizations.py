@@ -172,17 +172,17 @@ def test_extract_deck_ur_missing_data():
     assert extract_deck_utilization_ratios(None) == []
 
 
-def test_extract_cross_bracing_ur():
-    """Verify cross bracing UR extraction from pair designs dict."""
+def test_extract_cross_bracing_ur_from_production_result_keys():
+    """Extract actual Osdag engine keys, including the legacy UR key."""
     output_dict = {
         "crossbracing_design_results": {
             "G1-G2": {
                 "diagonal": {
-                    "compression": {"efficiency": 0.72},
-                    "tension": {"efficiency": 0.55},
+                    "compression": {"Member.efficiency": "0.72"},
+                    "tension": {"Optimum.UR": "0.55"},
                 },
                 "chord": {
-                    "compression": {"efficiency": 0.64},
+                    "compression": {"Member.efficiency": 0.64},
                 }
             }
         }
@@ -193,14 +193,14 @@ def test_extract_cross_bracing_ur():
     assert any(it["ur"] == 0.72 for it in items)
 
 
-def test_extract_end_diaphragm_ur():
-    """Verify end diaphragm UR extraction."""
+def test_extract_end_diaphragm_ur_from_production_result_keys():
+    """Extract actual Osdag engine keys for end-diaphragm members."""
     output_dict = {
         "end_diaphragm_design_results": {
             "Support-1": {
                 "bracing": {
-                    "compression": {"efficiency": 0.85},
-                    "tension": {"efficiency": 1.08},
+                    "compression": {"Member.efficiency": 0.85},
+                    "tension": {"Optimum.UR": 1.08},
                 }
             }
         }
@@ -209,6 +209,29 @@ def test_extract_end_diaphragm_ur():
     assert len(items) == 2
     assert any(it["ur"] == 0.85 and it["status"] == "PASS" for it in items)
     assert any(it["ur"] == 1.08 and it["status"] == "FAIL" for it in items)
+
+
+@pytest.mark.parametrize(
+    ("extractor", "result_key"),
+    [
+        (extract_cross_bracing_utilization_ratios, "crossbracing_design_results"),
+        (extract_end_diaphragm_utilization_ratios, "end_diaphragm_design_results"),
+    ],
+)
+def test_transverse_member_ur_ignores_missing_or_malformed_production_values(extractor, result_key):
+    """Missing, malformed, and negative values must not become invented URs."""
+    output_dict = {
+        result_key: {
+            "G1-G2": {
+                "diagonal": {
+                    "compression": {"Member.efficiency": "not-a-number"},
+                    "tension": {"Optimum.UR": -0.2},
+                    "other": {},
+                },
+            },
+        },
+    }
+    assert extractor(output_dict) == []
 
 
 # =============================================================================
@@ -314,6 +337,27 @@ def test_generate_all_visualizations_saves_to_dir():
         for name, path in charts.items():
             assert os.path.exists(path), f"File {path} not created"
             assert os.path.getsize(path) > 1000, f"File {path} is suspiciously small"
+
+
+def test_generate_all_visualizations_continues_after_one_chart_failure(monkeypatch):
+    """One rendering error must not suppress unrelated report charts."""
+    import osdagbridge.core.reports.visualizations as visualizations
+
+    def _raise(*args, **kwargs):
+        raise RuntimeError("intentional chart failure")
+
+    monkeypatch.setattr(visualizations, "create_girder_ur_chart", _raise)
+    charts = visualizations.generate_all_report_visualizations({}, {}, {})
+
+    assert "chart_ur_girders" not in charts
+    assert set(charts) == {
+        "chart_ur_deck",
+        "chart_ur_cross_bracing",
+        "chart_ur_end_diaphragm",
+        "chart_boq_steel_tonnage",
+        "chart_boq_materials",
+    }
+    assert all(image.startswith(PNG_MAGIC) for image in charts.values())
 
 
 # =============================================================================
