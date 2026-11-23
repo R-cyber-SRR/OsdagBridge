@@ -149,18 +149,18 @@ def test_live_load_missing_optional_data():
 
 
 def test_page_layout_preamble_invariants():
-    """Verify preamble includes enhanced layout, needspace and footer margin settings."""
-    with open("src/osdagbridge/core/reports/report_generator.py") as f:
-        src = f.read()
+    """Verify preamble includes centralized layout from styles.py, needspace and footer margin settings."""
+    from osdagbridge.core.reports.report_generator import preamble
+    pre = preamble("Test Project", "J101", "2026-11-23", "Rev 0")
 
-    assert r"\usepackage[a4paper, margin=1in, headheight=15pt, footskip=25pt]{geometry}" in src
-    assert r"\BeforeBeginEnvironment{longtable}{\needspace{8\baselineskip}}" in src
-    assert r"\setlength{\tabcolsep}{5pt}" in src
-    assert r"\renewcommand{\arraystretch}{1.15}" in src
-    assert r"\setlength{\LTpre}{4pt}" in src
-    assert r"\setlength{\LTpost}{8pt}" in src
-    assert r"\setlength{\intextsep}{8pt}" in src
-    assert r"\setlength{\textfloatsep}{10pt}" in src
+    assert r"\usepackage[a4paper, margin=1.0in, headheight=15pt, footskip=25pt]{geometry}" in pre
+    assert r"\BeforeBeginEnvironment{longtable}{\needspace{8\baselineskip}}" in pre
+    assert r"\setlength{\tabcolsep}{5.0pt}" in pre
+    assert r"\renewcommand{\arraystretch}{1.15}" in pre
+    assert r"\setlength{\LTpre}{4.0pt}" in pre
+    assert r"\setlength{\LTpost}{8.0pt}" in pre
+    assert r"\setlength{\intextsep}{8.0pt}" in pre
+    assert r"\setlength{\textfloatsep}{10.0pt}" in pre
 
 
 def test_live_load_all_vehicle_types():

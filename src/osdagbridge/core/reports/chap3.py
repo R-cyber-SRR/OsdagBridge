@@ -174,6 +174,19 @@ def ch3_loads(input_dict, output_dict=None):
         )
     vehicle_rows_str = "\n".join(vehicle_rows)
 
+    # Cross-reference selected vehicles against analyzed load cases if available
+    asum = (output_dict or {}).get("analysis_summary", {})
+    analyzed_lcs = list((asum.get("load_cases") or {}).keys()) if isinstance(asum, dict) else []
+    if analyzed_lcs:
+        analyzed_ll = [lc for lc in analyzed_lcs if "ll" in lc.lower() or "veh" in lc.lower() or "moving" in lc.lower()]
+        if not analyzed_ll and any(v != "None Selected" for v in vehicles):
+            vehicle_analysis_note = "\\noindent\\textit{Note: Selected vehicle classes and IRC 6 load configurations are shown above. However, moving load analysis was not executed or produced no active vehicle load cases in the analysis summary. Design checks reflect analyzed load combinations.}"
+        else:
+            vehicle_analysis_note = "\\noindent\\textit{Note: Vehicle load configurations per IRC 6:2017 Clause 204. Impact factor per Clause 208. Longitudinal braking load per Clause 211.2 applied to carriageway. Load cases analyzed: " + _tex(", ".join(analyzed_ll) if analyzed_ll else "None") + ".}"
+    else:
+        vehicle_analysis_note = "\\noindent\\textit{Note: Vehicle load configurations per IRC 6:2017 Clause 204. Impact factor per Clause 208. Longitudinal braking load per Clause 211.2 applied to carriageway. Parameters represent selected vehicle criteria.}"
+
+
     fp_mode  = input_dict.get(KEY_LL_FOOTPATH_PRESSURE_MODE, "")
     fp_value = input_dict.get(KEY_LL_FOOTPATH_PRESSURE_VALUE, "")
     if str(fp_mode).strip().lower() in ("as per irc 6", "as per irc6", "automatic"):
@@ -407,7 +420,7 @@ This section summarizes all loads applied to the bridge and the load combination
 \endhead
 """ + vehicle_rows_str + r"""
 \end{longtable}
-\noindent\textit{Note: Vehicle load configurations per IRC 6:2017 Clause 204. Impact factor per Clause 208. Longitudinal braking load per Clause 211.2 applied to carriageway.}
+""" + vehicle_analysis_note + r"""
 
 \vspace{1em}
 \begin{longtable}{|L{5.5cm}|p{10.0cm}|}

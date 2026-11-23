@@ -121,17 +121,9 @@ def calculate_material_quantities(inputs: dict, outputs: dict) -> dict:
                     quantities["concrete_deck_wt_single"] = f"{(concrete_vol * 2.5):.2f}"
                     quantities["concrete_deck_wt_total"] = f"{(concrete_vol * 2.5):.2f}"
 
-                    # 2. Reinforcement Steel (Cu.m) and Weight (MT)
-                    rebar_wt_kg = concrete_vol * 120.0
-                    rebar_vol = rebar_wt_kg / 7850.0
-                    rebar_area = rebar_vol / span if span > 0 else 0.0
-                    quantities["rebar_deck_vol_formula"] = f"\\({rebar_area:.6f}\\text{{ m}}^2 \\times {span:.2f}\\text{{ m}} = {rebar_vol:.5f}\\text{{ m}}^3\\)"
-                    quantities["rebar_deck_qty"] = "1"
-                    quantities["rebar_deck_vol_total"] = f"{rebar_vol:.2f}"
-                    
-                    rebar_wt_mt = rebar_wt_kg / 1000.0
-                    quantities["rebar_deck_wt_single"] = f"{rebar_wt_mt:.2f}"
-                    quantities["rebar_deck_wt_total"] = f"{rebar_wt_mt:.2f}"
+                    # 2. Reinforcement Steel: quantity not derivable from geometry alone.
+                    # A rebar schedule is required for a reliable estimate.
+                    # Keep rebar_deck quantities as N.A. (default placeholder).
             except Exception:
                 pass
 
@@ -281,46 +273,55 @@ def calculate_material_quantities(inputs: dict, outputs: dict) -> dict:
             if cb_spacing > 0.0:
                 n_panels = max(1, round(span / cb_spacing) - 1)
             else:
-                n_panels = max(3, int(span / 5.0))
+                # cb_spacing not available — cannot reliably compute panel count
+                # without a complete member schedule. Keep bracing as N.A.
+                for prefix in ("bracing_top", "bracing_bot", "bracing_diag"):
+                    quantities[f"{prefix}_vol_formula"] = "N.A."
+                    quantities[f"{prefix}_qty"] = "N.A."
+                    quantities[f"{prefix}_vol_total"] = "N.A."
+                    quantities[f"{prefix}_wt_single"] = "N.A."
+                    quantities[f"{prefix}_wt_total"] = "N.A."
+                cb_spacing = 0.0  # skip further bracing calculations below
 
-            # 5a. Top Chord
-            top_chord_qty = (n_girders - 1) * n_panels if top_chord_enabled else 0
-            top_chord_vol_single = bracing_area * spacing
-            top_chord_vol_total = top_chord_qty * top_chord_vol_single
-            top_chord_wt_single = top_chord_vol_single * 7.85
-            top_chord_wt_total = top_chord_vol_total * 7.85
-            
-            quantities["bracing_top_vol_formula"] = f"\\({bracing_area:.5f}\\text{{ m}}^2 \\times {spacing:.2f}\\text{{ m}} = {top_chord_vol_single:.5f}\\text{{ m}}^3\\)"
-            quantities["bracing_top_qty"] = str(top_chord_qty)
-            quantities["bracing_top_vol_total"] = f"{top_chord_vol_total:.2f}" if top_chord_enabled else "0.00"
-            quantities["bracing_top_wt_single"] = f"{top_chord_wt_single:.4f}"
-            quantities["bracing_top_wt_total"] = f"{top_chord_wt_total:.2f}" if top_chord_enabled else "0.00"
+            if cb_spacing > 0.0:
+                # 5a. Top Chord
+                top_chord_qty = (n_girders - 1) * n_panels if top_chord_enabled else 0
+                top_chord_vol_single = bracing_area * spacing
+                top_chord_vol_total = top_chord_qty * top_chord_vol_single
+                top_chord_wt_single = top_chord_vol_single * 7.85
+                top_chord_wt_total = top_chord_vol_total * 7.85
 
-            # 5b. Bottom Chord
-            bot_chord_qty = (n_girders - 1) * n_panels if bot_chord_enabled else 0
-            bot_chord_vol_single = bracing_area * spacing
-            bot_chord_vol_total = bot_chord_qty * bot_chord_vol_single
-            bot_chord_wt_single = bot_chord_vol_single * 7.85
-            bot_chord_wt_total = bot_chord_vol_total * 7.85
-            
-            quantities["bracing_bot_vol_formula"] = f"\\({bracing_area:.5f}\\text{{ m}}^2 \\times {spacing:.2f}\\text{{ m}} = {bot_chord_vol_single:.5f}\\text{{ m}}^3\\)"
-            quantities["bracing_bot_qty"] = str(bot_chord_qty)
-            quantities["bracing_bot_vol_total"] = f"{bot_chord_vol_total:.2f}" if bot_chord_enabled else "0.00"
-            quantities["bracing_bot_wt_single"] = f"{bot_chord_wt_single:.4f}"
-            quantities["bracing_bot_wt_total"] = f"{bot_chord_wt_total:.2f}" if bot_chord_enabled else "0.00"
+                quantities["bracing_top_vol_formula"] = f"\\({bracing_area:.5f}\\text{{ m}}^2 \\times {spacing:.2f}\\text{{ m}} = {top_chord_vol_single:.5f}\\text{{ m}}^3\\)"
+                quantities["bracing_top_qty"] = str(top_chord_qty)
+                quantities["bracing_top_vol_total"] = f"{top_chord_vol_total:.2f}" if top_chord_enabled else "0.00"
+                quantities["bracing_top_wt_single"] = f"{top_chord_wt_single:.4f}"
+                quantities["bracing_top_wt_total"] = f"{top_chord_wt_total:.2f}" if top_chord_enabled else "0.00"
 
-            # 5c. Diagonal
-            diags_qty = (n_girders - 1) * n_panels * 2
-            diag_vol_single = bracing_area * bracing_len
-            diag_vol_total = diags_qty * diag_vol_single
-            diag_wt_single = diag_vol_single * 7.85
-            diag_wt_total = diag_vol_total * 7.85
-            
-            quantities["bracing_diag_vol_formula"] = f"\\({bracing_area:.5f}\\text{{ m}}^2 \\times {bracing_len:.2f}\\text{{ m}} = {diag_vol_single:.5f}\\text{{ m}}^3\\)"
-            quantities["bracing_diag_qty"] = str(diags_qty)
-            quantities["bracing_diag_vol_total"] = f"{diag_vol_total:.2f}"
-            quantities["bracing_diag_wt_single"] = f"{diag_wt_single:.4f}"
-            quantities["bracing_diag_wt_total"] = f"{diag_wt_total:.2f}"
+                # 5b. Bottom Chord
+                bot_chord_qty = (n_girders - 1) * n_panels if bot_chord_enabled else 0
+                bot_chord_vol_single = bracing_area * spacing
+                bot_chord_vol_total = bot_chord_qty * bot_chord_vol_single
+                bot_chord_wt_single = bot_chord_vol_single * 7.85
+                bot_chord_wt_total = bot_chord_vol_total * 7.85
+
+                quantities["bracing_bot_vol_formula"] = f"\\({bracing_area:.5f}\\text{{ m}}^2 \\times {spacing:.2f}\\text{{ m}} = {bot_chord_vol_single:.5f}\\text{{ m}}^3\\)"
+                quantities["bracing_bot_qty"] = str(bot_chord_qty)
+                quantities["bracing_bot_vol_total"] = f"{bot_chord_vol_total:.2f}" if bot_chord_enabled else "0.00"
+                quantities["bracing_bot_wt_single"] = f"{bot_chord_wt_single:.4f}"
+                quantities["bracing_bot_wt_total"] = f"{bot_chord_wt_total:.2f}" if bot_chord_enabled else "0.00"
+
+                # 5c. Diagonal
+                diags_qty = (n_girders - 1) * n_panels * 2
+                diag_vol_single = bracing_area * bracing_len
+                diag_vol_total = diags_qty * diag_vol_single
+                diag_wt_single = diag_vol_single * 7.85
+                diag_wt_total = diag_vol_total * 7.85
+
+                quantities["bracing_diag_vol_formula"] = f"\\({bracing_area:.5f}\\text{{ m}}^2 \\times {bracing_len:.2f}\\text{{ m}} = {diag_vol_single:.5f}\\text{{ m}}^3\\)"
+                quantities["bracing_diag_qty"] = str(diags_qty)
+                quantities["bracing_diag_vol_total"] = f"{diag_vol_total:.2f}"
+                quantities["bracing_diag_wt_single"] = f"{diag_wt_single:.4f}"
+                quantities["bracing_diag_wt_total"] = f"{diag_wt_total:.2f}"
         else:
             # Keep all bracing volumes, quantities, and weights as default placeholder "N.A."
             for prefix in ("bracing_top", "bracing_bot", "bracing_diag"):

@@ -163,7 +163,7 @@ def preamble(project_name, job_number, report_date, report_version='Rev 0'):
 \documentclass[12pt,a4paper]{report}
 
 % Packages
-\usepackage[a4paper, margin=1in, headheight=15pt, footskip=25pt]{geometry}
+\usepackage[""" + GEOMETRY_OPTIONS + r"""]{geometry}
 \usepackage{graphicx}
 \usepackage{amsmath}
 \usepackage{amssymb}
@@ -200,22 +200,22 @@ def preamble(project_name, job_number, report_date, report_version='Rev 0'):
 \numberwithin{table}{chapter}
 \numberwithin{figure}{chapter}
 % Table layout and spacing: consistent padding, row height, and longtable pre/post skips
-\setlength{\tabcolsep}{5pt}
-\renewcommand{\arraystretch}{1.15}
-\setlength{\LTpre}{4pt}
-\setlength{\LTpost}{8pt}
-\setlength{\intextsep}{8pt}
-\setlength{\textfloatsep}{10pt}
+\setlength{\tabcolsep}{""" + str(TABLE_STYLE["tabcolsep"]) + r"""pt}
+\renewcommand{\arraystretch}{""" + str(TABLE_STYLE["arraystretch"]) + r"""}
+\setlength{\LTpre}{""" + str(TABLE_STYLE["lt_pre"]) + r"""pt}
+\setlength{\LTpost}{""" + str(TABLE_STYLE["lt_post"]) + r"""pt}
+\setlength{\intextsep}{""" + str(TABLE_STYLE.get("intextsep", 8.0)) + r"""pt}
+\setlength{\textfloatsep}{""" + str(TABLE_STYLE.get("textfloatsep", 10.0)) + r"""pt}
 % Table rules (outline thickness) and small extra row height for clarity
-\setlength{\arrayrulewidth}{0.5pt}
-\setlength{\extrarowheight}{0.6pt}
+\setlength{\arrayrulewidth}{""" + str(TABLE_STYLE["arrayrulewidth"]) + r"""pt}
+\setlength{\extrarowheight}{""" + str(TABLE_STYLE["extrarowheight"]) + r"""pt}
 
 % Prevent tables from overflowing past the page bottom:
 % if fewer than 6-8 baseline-skips remain, break to the next page first.
-\BeforeBeginEnvironment{table}{\needspace{6\baselineskip}}
-\BeforeBeginEnvironment{longtable}{\needspace{8\baselineskip}}
+\BeforeBeginEnvironment{table}{\needspace{""" + str(TABLE_STYLE["needspace_table"]) + r"""\baselineskip}}
+\BeforeBeginEnvironment{longtable}{\needspace{""" + str(TABLE_STYLE["needspace_longtable"]) + r"""\baselineskip}}
 
-\definecolor{osdagGreen}{HTML}{91B014}
+\definecolor{osdagGreen}{HTML}{""" + OSDAG_GREEN_LATEX + r"""}
 
 \fancypagestyle{main}{
   \fancyhf{}

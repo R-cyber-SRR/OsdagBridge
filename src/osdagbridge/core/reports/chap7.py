@@ -1,3 +1,4 @@
+from osdagbridge.core.reports.styles import TABCOLSEP_COMPACT_PT
 def ch7_quantities(input_dict, fig_paths=None):
     if fig_paths is None:
         fig_paths = {}
@@ -39,7 +40,7 @@ def ch7_quantities(input_dict, fig_paths=None):
 \noindent\textbf{Table 7.1  Bill of Materials (Steel, Concrete, and Reinforcement Quantities)}
 
 \begingroup
-\setlength{\tabcolsep}{2.5pt}
+\setlength{\tabcolsep}{""" + str(TABCOLSEP_COMPACT_PT) + r"""pt}
 \begin{longtable}{|C{0.8cm}|L{3.5cm}|C{2.8cm}|C{1.5cm}|C{1.8cm}|C{1.7cm}|C{1.8cm}|}
 \hline
 \textbf{S.N.} & \textbf{Item Description} & \textbf{Volume} & \textbf{Quantity} & \textbf{Total Volume} & \textbf{Weight (MT)} & \textbf{Total Weight (MT)} \\
@@ -68,6 +69,9 @@ def ch7_quantities(input_dict, fig_paths=None):
 \hline
 \end{longtable}
 \endgroup
+\noindent\textit{Note: Concrete deck volume is geometry-derived ($\\text{Width} \\times \\text{Thickness} \\times \\text{Span}$). Items shown as N.A.\\ require a completed member or reinforcement schedule not available from the current design pass.}
+
+\vspace{0.4em}
 """ + mat_figs_block + r"""
 """
 

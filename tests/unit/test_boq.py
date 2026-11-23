@@ -20,7 +20,9 @@ def test_boq_empty_inputs():
 
 
 def test_boq_concrete_and_rebar_calculation():
-    """Verify concrete volume and rebar calculations with valid dimensions."""
+    """Verify concrete volume with valid dimensions, and that rebar is explicitly N.A.
+    (no fabricated 120 kg/m^3 estimate without a structural schedule).
+    """
     inputs = {
         KEY_SPAN: "25.0",
         KEY_TS_NO_OF_GIRDERS: "4",
@@ -34,8 +36,9 @@ def test_boq_concrete_and_rebar_calculation():
     assert quantities["concrete_deck_vol_total"] == "75.00"
     # Concrete weight = 75.0 * 2.5 = 187.50 MT
     assert quantities["concrete_deck_wt_total"] == "187.50"
-    # Rebar weight = 75.0 * 120 kg = 9000 kg = 9.00 MT
-    assert quantities["rebar_deck_wt_total"] == "9.00"
+    # Rebar weight is explicitly N.A. to avoid fabricated quantities
+    assert quantities["rebar_deck_wt_total"] == "N.A."
+    assert quantities["rebar_deck_qty"] == "N.A."
 
     # Math mode safety: should use \( ... \) instead of $ ... $
     formula = quantities["concrete_deck_vol_formula"]
